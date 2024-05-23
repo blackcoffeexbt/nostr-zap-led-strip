@@ -1,0 +1,3 @@
+# Nostr Zap Strip   
+
+A fork of the Nostr Zap lamp that animates LEDs on a WS2812b strip when zapped.
