@@ -24,11 +24,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-
-#define LED_PIN     2    // Define the pin where the data line is connected
-#define NUM_LEDS    208  // Number of LEDs in your strip
-#define BRIGHTNESS  150   // Set the brightness (0-255)
-#define LED_TYPE    WS2812B
+#define LED_PIN 2      // Define the pin where the data line is connected
+#define NUM_LEDS 208   // Number of LEDs in your strip
+#define BRIGHTNESS 150 // Set the brightness (0-255)
+#define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
@@ -42,9 +41,9 @@ int triggerAp = false;
 bool lastInternetConnectionState = true;
 
 int socketDisconnectedCount = 0;
-int ledPin = 13; // Pin number where the LED is connected
-extern int buttonPin; // Pin number where the button is connected
-int minFlashDelay = 100; // Minimum delay between flashes (in milliseconds)
+int ledPin = 13;          // Pin number where the LED is connected
+extern int buttonPin;     // Pin number where the button is connected
+int minFlashDelay = 100;  // Minimum delay between flashes (in milliseconds)
 int maxFlashDelay = 5000; // Maximum delay between flashes (in milliseconds)
 int lightBrightness = 50; // The brightness of the LED (0-255)
 
@@ -61,7 +60,7 @@ String serialisedEventRequest;
 
 extern bool hasInternetConnection;
 
-NostrRequestOptions* eventRequestOptions;
+NostrRequestOptions *eventRequestOptions;
 
 bool hasSentEvent = false;
 
@@ -82,11 +81,11 @@ void flashLightning(int zapAmountSats);
 void doLightningFlash(int numberOfFlashes);
 void fadeOutFlash(int intensity);
 unsigned long getUnixTimestamp();
-void zapReceiptEvent(const std::string& key, const char* payload);
-void okEvent(const std::string& key, const char* payload);
-void nip01Event(const std::string& key, const char* payload);
-void relayConnectedEvent(const std::string& key, const std::string& message);
-void relayDisonnectedEvent(const std::string& key, const std::string& message);
+void zapReceiptEvent(const std::string &key, const char *payload);
+void okEvent(const std::string &key, const char *payload);
+void nip01Event(const std::string &key, const char *payload);
+void relayConnectedEvent(const std::string &key, const std::string &message);
+void relayDisonnectedEvent(const std::string &key, const std::string &message);
 uint16_t getRandomNum(uint16_t min, uint16_t max);
 void loadSettings();
 int64_t getAmountInSatoshis(const String &input);
@@ -94,49 +93,58 @@ String getBolt11InvoiceFromEvent(String jsonStr);
 void createZapEventRequest();
 void connectToNostrRelays();
 
-#define BUTTON_PIN 0 // change this to the pin your button is connected to
+#define BUTTON_PIN 0         // change this to the pin your button is connected to
 #define DOUBLE_TAP_DELAY 250 // delay for double tap in milliseconds
 
 volatile unsigned long lastButtonPress = 0;
 volatile bool doubleTapDetected = false;
 
-void IRAM_ATTR handleButtonInterrupt() {
+void IRAM_ATTR handleButtonInterrupt()
+{
   unsigned long now = millis();
-  if (now - lastButtonPress < DOUBLE_TAP_DELAY) {
+  if (now - lastButtonPress < DOUBLE_TAP_DELAY)
+  {
     doubleTapDetected = true;
   }
   lastButtonPress = now;
 }
 
 // Define the WiFi event callback function
-void WiFiEvent(WiFiEvent_t event) {
-  switch(event) {
-    case SYSTEM_EVENT_STA_GOT_IP:
-      Serial.println("Connected to WiFi and got an IP");
-      delay(100);
-      connectToNostrRelays();      
-      break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-      Serial.println("Disconnected from WiFi");
-      // WiFi.begin(ssid, password); // Try to reconnect after getting disconnected
-      break;
+void WiFiEvent(WiFiEvent_t event)
+{
+  switch (event)
+  {
+  case SYSTEM_EVENT_STA_GOT_IP:
+    Serial.println("Connected to WiFi and got an IP");
+    delay(100);
+    connectToNostrRelays();
+    break;
+  case SYSTEM_EVENT_STA_DISCONNECTED:
+    Serial.println("Disconnected from WiFi");
+    // WiFi.begin(ssid, password); // Try to reconnect after getting disconnected
+    break;
   }
 }
 
-void colorWipe(CRGB color, int wait) {
-  for(int i = 0; i < NUM_LEDS; i++) {
+void colorWipe(CRGB color, int wait)
+{
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
     leds[i] = color;
     FastLED.show();
     delay(wait);
   }
 }
 // Generate rainbow colors across 0-255 positions.
-CRGB Wheel(byte WheelPos) {
+CRGB Wheel(byte WheelPos)
+{
   WheelPos = 255 - WheelPos;
-  if(WheelPos < 85) {
+  if (WheelPos < 85)
+  {
     return CRGB(255 - WheelPos * 3, 0, WheelPos * 3);
   }
-  if(WheelPos < 170) {
+  if (WheelPos < 170)
+  {
     WheelPos -= 85;
     return CRGB(0, WheelPos * 3, 255 - WheelPos * 3);
   }
@@ -144,11 +152,14 @@ CRGB Wheel(byte WheelPos) {
   return CRGB(WheelPos * 3, 255 - WheelPos * 3, 0);
 }
 
-void rainbowCycle(int wait) {
+void rainbowCycle(int wait)
+{
   uint16_t i, j;
 
-  for(j=0; j<256*5; j++) { // 5 cycles of all colors on the wheel
-    for(i=0; i< NUM_LEDS; i++) {
+  for (j = 0; j < 256 * 5; j++)
+  { // 5 cycles of all colors on the wheel
+    for (i = 0; i < NUM_LEDS; i++)
+    {
       leds[i] = Wheel((i * 256 / NUM_LEDS + j) & 255);
     }
     FastLED.show();
@@ -156,40 +167,50 @@ void rainbowCycle(int wait) {
   }
 }
 
-//free rtos task for lamp control
-void lampControlTask(void *pvParameters) {
+// free rtos task for lamp control
+void lampControlTask(void *pvParameters)
+{
   Serial.println("Starting lamp control task");
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonInterrupt, FALLING);
 
-  for(;;) {
-    if(!lastInternetConnectionState) {
+  for (;;)
+  {
+    if (!lastInternetConnectionState)
+    {
       // slow fade pulse of LED
-      for (int i = 100; i < 255; i++) {
+      for (int i = 100; i < 255; i++)
+      {
         analogWrite(ledPin, i); // set the LED to the desired intensity
-        delay(10);  // wait for a moment
+        delay(10);              // wait for a moment
       }
       // now fade out
-      for (int i = 255; i >= 100; i--) {
+      for (int i = 255; i >= 100; i--)
+      {
         analogWrite(ledPin, i); // set the LED bright ness
-        delay(10);  // wait for a moment
+        delay(10);              // wait for a moment
       }
     }
 
-    // detect double tap on button 
-    if (doubleTapDetected) {
+    // detect double tap on button
+    if (doubleTapDetected)
+    {
       Serial.println("Double tap detected. REstarting");
       // restart device
       ESP.restart();
     }
 
     // watch for button press and call changeBrightness
-    if (digitalRead(buttonPin) == LOW) {
+    if (digitalRead(buttonPin) == LOW)
+    {
       Serial.println("Button pressed. Changing brightness");
       changeBrightness();
-    } else {
+    }
+    else
+    {
 
       // watch for lamp state and do as needed
-      if (zapAmountsFlashQueue.size() > 0) {
+      if (zapAmountsFlashQueue.size() > 0)
+      {
         //  get size of queue and serial print all elements in queue
         Serial.println("There are " + String(zapAmountsFlashQueue.size()) + " zap(s) in the queue");
         // for (int i = 0; i < zapAmountsFlashQueue.size(); i++) {
@@ -204,7 +225,6 @@ void lampControlTask(void *pvParameters) {
         Serial.println("Flashing " + String(zapAmount) + " times");
         colorWipe(CRGB::Purple, 1);
         colorWipe(CRGB::LightPink, 1);
-
       }
       vTaskDelay(100 / portTICK_PERIOD_MS);
     }
@@ -213,9 +233,10 @@ void lampControlTask(void *pvParameters) {
 
 /**
  * @brief Create a Zap Event Request object
- * 
+ *
  */
-void createZapEventRequest() {
+void createZapEventRequest()
+{
   // Create the REQ
   eventRequestOptions = new NostrRequestOptions();
   // Populate kinds
@@ -225,9 +246,10 @@ void createZapEventRequest() {
 
   // // Populate #p
   Serial.println("npubHexString is |" + String(npubHexString) + "|");
-  if(String(npubHexString) != "") {
+  if (String(npubHexString) != "")
+  {
     Serial.println("npub is specified");
-    String* pubkeys = new String[1];  // Allocate memory dynamically
+    String *pubkeys = new String[1]; // Allocate memory dynamically
     pubkeys[0] = npubHexString;
     eventRequestOptions->p = pubkeys;
     eventRequestOptions->p_count = 1;
@@ -243,9 +265,10 @@ void createZapEventRequest() {
 
 /**
  * @brief Connect to the Nostr relays
- * 
+ *
  */
-void connectToNostrRelays() {
+void connectToNostrRelays()
+{
   // first disconnect from all relays
   nostrRelayManager.disconnect();
   Serial.println("Requesting Zap notifications");
@@ -254,20 +277,22 @@ void connectToNostrRelays() {
   std::vector<String> relays;
   String relayStringCopy = String(relayString);
   int commaIndex = relayStringCopy.indexOf(",");
-  while (commaIndex != -1) {
+  while (commaIndex != -1)
+  {
     relays.push_back(relayStringCopy.substring(0, commaIndex));
     relayStringCopy = relayStringCopy.substring(commaIndex + 1);
     commaIndex = relayStringCopy.indexOf(",");
   }
   // add last item after last comma
-  if (relayStringCopy.length() > 0) {
+  if (relayStringCopy.length() > 0)
+  {
     relays.push_back(relayStringCopy);
   }
 
   // no need to convert to char* anymore
   nostr.setLogging(true);
   nostrRelayManager.setRelays(relays);
-  nostrRelayManager.setMinRelaysAndTimeout(1,10000);
+  nostrRelayManager.setMinRelaysAndTimeout(1, 10000);
 
   // Set some event specific callbacks here
   Serial.println("Setting callbacks");
@@ -283,32 +308,39 @@ void connectToNostrRelays() {
 bool adjustLightingBrightnessUp = true;
 /**
  * @brief change lamp brightness
- * 
+ *
  */
-void changeBrightness() {
+void changeBrightness()
+{
   // use lastLightingAdjustmentWasUp and max value of 255 to decide whether to adjust up or down
-  if (adjustLightingBrightnessUp) {
+  if (adjustLightingBrightnessUp)
+  {
     lightBrightness = lightBrightness + 5;
-    if (lightBrightness >= 255) {
+    if (lightBrightness >= 255)
+    {
       lightBrightness = 255;
       adjustLightingBrightnessUp = false;
       // quick double flash to show at max brughtness
       Serial.println("Max brightness");
       delay(500); // pause to let the user take their finger off the button
     }
-  } else {
+  }
+  else
+  {
     lightBrightness = lightBrightness - 5;
-    if (lightBrightness <= 0) {
+    if (lightBrightness <= 0)
+    {
       lightBrightness = 0;
       adjustLightingBrightnessUp = true;
       Serial.println("Min brightness");
       delay(500); // pause to let the user take their finger off the button
     }
   }
-  
+
   // write to spiffs
   File file = SPIFFS.open("/brightness.txt", FILE_WRITE);
-  if(!file){
+  if (!file)
+  {
     Serial.println("Failed to open file for writing");
     return;
   }
@@ -319,21 +351,24 @@ void changeBrightness() {
   // delay(250);
 }
 
-void fadeOutFlash(int intensity) {
+void fadeOutFlash(int intensity)
+{
   analogWrite(ledPin, intensity); // set the LED to the desired intensity
 
   delay(50); // delay to give the LED time to light up
 
   // fast fade-out
-  for (int i = intensity; i >= 0; i--) {
+  for (int i = intensity; i >= 0; i--)
+  {
     analogWrite(ledPin, i); // set the LED brightness
-    delay(1);  // wait for a moment
+    delay(1);               // wait for a moment
   }
 
   delay(50);
 }
 
-void doLightningFlash(int numberOfFlashes) {
+void doLightningFlash(int numberOfFlashes)
+{
 
   Serial.println("Flashing " + String(numberOfFlashes) + " times");
 
@@ -346,7 +381,8 @@ void doLightningFlash(int numberOfFlashes) {
 
   delay(100);
 
-  for(int flash = 1; flash <= numberOfFlashes; flash++) {
+  for (int flash = 1; flash <= numberOfFlashes; flash++)
+  {
     // turn the LED on
     analogWrite(ledPin, 255);
 
@@ -356,18 +392,20 @@ void doLightningFlash(int numberOfFlashes) {
     delay(250);
 
     // fast fade-out
-    for (int i = 255; i >= lightBrightness / 3; i = i - 2) {
-      analogWrite(ledPin, i);  // set the LED brightness
-      delay(1);  // wait for a moment
+    for (int i = 255; i >= lightBrightness / 3; i = i - 2)
+    {
+      analogWrite(ledPin, i); // set the LED brightness
+      delay(1);               // wait for a moment
     }
     // analogWrite(ledPin, lightBrightness / 3);
     delay(250);
   }
 
   // fade from lightBrightness / 3 to lightBrightness
-  for (int i = lightBrightness / 3; i <= lightBrightness; i = i + 1) {
+  for (int i = lightBrightness / 3; i <= lightBrightness; i = i + 1)
+  {
     analogWrite(ledPin, i); // set the LED brightness
-    delay(1);  // wait for a moment
+    delay(1);               // wait for a moment
   }
 
   // delay(50);
@@ -381,10 +419,12 @@ void doLightningFlash(int numberOfFlashes) {
   analogWrite(ledPin, lightBrightness);
 }
 
-void flashLightning(int zapAmountSats) {
+void flashLightning(int zapAmountSats)
+{
   int flashCount = 1;
   // set flash count length of the number in the zap amount
-  if (zapAmountSats > 0) {
+  if (zapAmountSats > 0)
+  {
     flashCount = floor(log10(zapAmountSats)) + 1;
   }
 
@@ -392,16 +432,19 @@ void flashLightning(int zapAmountSats) {
   xSemaphoreTake(zapMutex, portMAX_DELAY);
   zapAmountsFlashQueue.push_back(flashCount);
   xSemaphoreGive(zapMutex);
-
 }
 
-unsigned long getUnixTimestamp() {
+unsigned long getUnixTimestamp()
+{
   time_t now;
   struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
+  if (!getLocalTime(&timeinfo))
+  {
     Serial.println("Failed to obtain time");
     return 0;
-  } else {
+  }
+  else
+  {
     Serial.println("Got timestamp of " + String(now));
   }
   time(&now);
@@ -410,62 +453,76 @@ unsigned long getUnixTimestamp() {
 
 String lastPayload = "";
 
-void relayConnectedEvent(const std::string& key, const std::string& message) {
+void relayConnectedEvent(const std::string &key, const std::string &message)
+{
   socketDisconnectedCount = 0;
   Serial.println("Relay connected: ");
 
-  
+  colorWipe(CRGB::Green, 1);
+  colorWipe(CRGB::Pink, 1);
+
   Serial.print(F("Requesting events:"));
   Serial.println(serialisedEventRequest);
 
   nostrRelayManager.broadcastEvent(serialisedEventRequest);
 }
 
-void relayDisonnectedEvent(const std::string& key, const std::string& message) {
+void relayDisonnectedEvent(const std::string &key, const std::string &message)
+{
   Serial.println("Relay disconnected: ");
   socketDisconnectedCount++;
   // reboot after 3 socketDisconnectedCount subsequenet messages
-  if(socketDisconnectedCount >= 3) {
+  if (socketDisconnectedCount >= 3)
+  {
     Serial.println("Too many socket disconnections. Restarting");
+    colorWipe(CRGB::Red, 1);
+    colorWipe(CRGB::Pink, 1);
     // restart device
     ESP.restart();
   }
 }
 
-void okEvent(const std::string& key, const char* payload) {
-    if(lastPayload != payload) { // Prevent duplicate events from multiple relays triggering the same logic
-      lastPayload = payload;
-      Serial.println("payload is: ");
-      Serial.println(payload);
-    }
+void okEvent(const std::string &key, const char *payload)
+{
+  if (lastPayload != payload)
+  { // Prevent duplicate events from multiple relays triggering the same logic
+    lastPayload = payload;
+    Serial.println("payload is: ");
+    Serial.println(payload);
+  }
 }
 
-void nip01Event(const std::string& key, const char* payload) {
-    if(lastPayload != payload) { // Prevent duplicate events from multiple relays triggering the same logic
-      lastPayload = payload;
-      // We can convert the payload to a StaticJsonDocument here and get the content
-      StaticJsonDocument<1024> eventJson;
-      deserializeJson(eventJson, payload);
-      String pubkey = eventJson[2]["pubkey"].as<String>();
-      String content = eventJson[2]["content"].as<String>();
-      Serial.println(pubkey + ": " + content);
-    }
+void nip01Event(const std::string &key, const char *payload)
+{
+  if (lastPayload != payload)
+  { // Prevent duplicate events from multiple relays triggering the same logic
+    lastPayload = payload;
+    // We can convert the payload to a StaticJsonDocument here and get the content
+    StaticJsonDocument<1024> eventJson;
+    deserializeJson(eventJson, payload);
+    String pubkey = eventJson[2]["pubkey"].as<String>();
+    String content = eventJson[2]["content"].as<String>();
+    Serial.println(pubkey + ": " + content);
+  }
 }
 
-String getBolt11InvoiceFromEvent(String jsonStr) {
+String getBolt11InvoiceFromEvent(String jsonStr)
+{
   // Remove all JSON formatting characters
-  String str = jsonStr.substring(1, jsonStr.length()-1); // remove the first and last square brackets
-  str.replace("\\", ""); // remove all backslashes
+  String str = jsonStr.substring(1, jsonStr.length() - 1); // remove the first and last square brackets
+  str.replace("\\", "");                                   // remove all backslashes
 
   // Search for the "bolt11" substring
   int index = str.indexOf("bolt11");
 
   // Extract the value associated with "bolt11"
   String bolt11 = "";
-  if (index != -1) {
+  if (index != -1)
+  {
     int start = index + 9; // the value of "bolt11" starts 9 characters after the substring index
-    int end = start; // initialize the end index
-    while (str.charAt(end) != '\"') {
+    int end = start;       // initialize the end index
+    while (str.charAt(end) != '\"')
+    {
       end++; // increment the end index until the closing double-quote is found
     }
     bolt11 = str.substring(start, end); // extract the value of "bolt11"
@@ -475,86 +532,101 @@ String getBolt11InvoiceFromEvent(String jsonStr) {
 
 /**
  * @brief Get the Amount In Satoshis from a lightning bol11 invoice
- * 
- * @param input 
- * @return int64_t 
+ *
+ * @param input
+ * @return int64_t
  */
-int64_t getAmountInSatoshis(const String &input) {
-    int64_t number = -1;
-    char multiplier = ' ';
+int64_t getAmountInSatoshis(const String &input)
+{
+  int64_t number = -1;
+  char multiplier = ' ';
 
-    for (unsigned int i = 0; i < input.length(); ++i) {
-        if (isdigit(input[i])) {
-            number = 0;
-            while (isdigit(input[i])) {
-                number = number * 10 + (input[i] - '0');
-                ++i;
-            }
-            for (unsigned int j = i; j < input.length(); ++j) {
-                if (isalpha(input[j])) {
-                    multiplier = input[j];
-                    break;
-                }
-            }
-            break;
+  for (unsigned int i = 0; i < input.length(); ++i)
+  {
+    if (isdigit(input[i]))
+    {
+      number = 0;
+      while (isdigit(input[i]))
+      {
+        number = number * 10 + (input[i] - '0');
+        ++i;
+      }
+      for (unsigned int j = i; j < input.length(); ++j)
+      {
+        if (isalpha(input[j]))
+        {
+          multiplier = input[j];
+          break;
         }
+      }
+      break;
     }
+  }
 
-    if (number == -1 || multiplier == ' ') {
-        return -1;
-    }
+  if (number == -1 || multiplier == ' ')
+  {
+    return -1;
+  }
 
-    int64_t satoshis = number;
+  int64_t satoshis = number;
 
-    switch (multiplier) {
-        case 'm':
-            satoshis *= 100000; // 0.001 * 100,000,000
-            break;
-        case 'u':
-            satoshis *= 100; // 0.000001 * 100,000,000
-            break;
-        case 'n':
-            satoshis /= 10; // 0.000000001 * 100,000,000
-            break;
-        case 'p':
-            satoshis /= 10000; // 0.000000000001 * 100,000,000
-            break;
-        default:
-            return -1;
-    }
+  switch (multiplier)
+  {
+  case 'm':
+    satoshis *= 100000; // 0.001 * 100,000,000
+    break;
+  case 'u':
+    satoshis *= 100; // 0.000001 * 100,000,000
+    break;
+  case 'n':
+    satoshis /= 10; // 0.000000001 * 100,000,000
+    break;
+  case 'p':
+    satoshis /= 10000; // 0.000000000001 * 100,000,000
+    break;
+  default:
+    return -1;
+  }
 
-    return satoshis;
+  return satoshis;
 }
 
-
-uint16_t getRandomNum(uint16_t min, uint16_t max) {
-  uint16_t rand  = (esp_random() % (max - min + 1)) + min;
+uint16_t getRandomNum(uint16_t min, uint16_t max)
+{
+  uint16_t rand = (esp_random() % (max - min + 1)) + min;
   Serial.println("Random number: " + String(rand));
   return rand;
 }
 
-void zapReceiptEvent(const std::string& key, const char* payload) {
-    if(lastPayload != payload) { // Prevent duplicate events from multiple relays triggering the same logic, as we are using multiple relays, this is likely to happen
-      lastPayload = payload;
-      String bolt11 = getBolt11InvoiceFromEvent(payload);
-      // Serial.println("BOLT11: " + bolt11);
-      uint64_t amountInSatoshis = getAmountInSatoshis(bolt11);
-      Serial.println("Zapped! " + String(amountInSatoshis));
-      flashLightning(amountInSatoshis);
-    }
+void zapReceiptEvent(const std::string &key, const char *payload)
+{
+  if (lastPayload != payload)
+  { // Prevent duplicate events from multiple relays triggering the same logic, as we are using multiple relays, this is likely to happen
+    lastPayload = payload;
+    String bolt11 = getBolt11InvoiceFromEvent(payload);
+    // Serial.println("BOLT11: " + bolt11);
+    uint64_t amountInSatoshis = getAmountInSatoshis(bolt11);
+    Serial.println("Zapped! " + String(amountInSatoshis));
+    flashLightning(amountInSatoshis);
+  }
 }
 
-
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   Serial.println("boot");
 
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
 
+  colorWipe(CRGB::Pink, 1);
+  colorWipe(CRGB::Black, 1);
+  colorWipe(CRGB::Pink, 1);
+
   FlashFS.begin(FORMAT_ON_FAIL);
   // init spiffs
-  if(!SPIFFS.begin(true)){
+  if (!SPIFFS.begin(true))
+  {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
@@ -567,52 +639,59 @@ void setup() {
 
   randomSeed(analogRead(0)); // Seed the random number generator
 
-    // start lamp control task
+  // start lamp control task
   xTaskCreatePinnedToCore(
-    lampControlTask,   /* Task function. */
-    "lampControlTask",     /* String with name of task. */
-    5000,            /* Stack size in bytes. */
-    NULL,             /* Parameter passed as input of the task */
-    2,                /* Priority of the task. */
-    NULL,             /* Task handle. */
-    1);               /* Core where the task should run */
+      lampControlTask,   /* Task function. */
+      "lampControlTask", /* String with name of task. */
+      5000,              /* Stack size in bytes. */
+      NULL,              /* Parameter passed as input of the task */
+      2,                 /* Priority of the task. */
+      NULL,              /* Task handle. */
+      1);                /* Core where the task should run */
 
   WiFi.onEvent(WiFiEvent);
   init_WifiManager();
 
   createZapEventRequest();
 
-   if(hasInternetConnection) {
+  if (hasInternetConnection)
+  {
     Serial.println("Has internet connection. Connectring to relays");
     connectToNostrRelays();
-   }
+  }
 
   // Set the LED to the desired intensity
   analogWrite(ledPin, lightBrightness);
-
 }
 
 bool lastInternetConnectionCheckTime = 0;
 
-void loop() {
+void loop()
+{
   // fill the queue with some random zap amounts
   // for (int i = 0; i < 3; i++) {
   //   zapAmountsFlashQueue.push_back(getRandomNum(1,3));
   // }
   // delay(30000);
   // send ping to Quad9 9.9.9.9 every 10 seconds to check for internet connection
-  if (millis() - lastInternetConnectionCheckTime > 10000) {
-    if(WiFi.status() == WL_CONNECTED) {
-      IPAddress ip(9,9,9,9);  // Quad9 DNS
+  if (millis() - lastInternetConnectionCheckTime > 10000)
+  {
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      IPAddress ip(9, 9, 9, 9); // Quad9 DNS
       bool ret = Ping.ping(ip);
-      if(ret) {
-        if(!lastInternetConnectionState) {
+      if (ret)
+      {
+        if (!lastInternetConnectionState)
+        {
           Serial.println("Internet connection has come back! :D");
           // reboot
           ESP.restart();
         }
         lastInternetConnectionState = true;
-      } else {
+      }
+      else
+      {
         lastInternetConnectionState = false;
       }
     }
@@ -622,9 +701,9 @@ void loop() {
   nostrRelayManager.broadcastEvents();
 
   // reboot every hour
-  if (millis() > 3600000) {
+  if (millis() > 3600000)
+  {
     Serial.println("Rebooting");
     ESP.restart();
   }
-
 }
